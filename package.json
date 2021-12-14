@@ -30,16 +30,16 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "ts-wags",
+  "name": "wags-js",
   "author": "Mike Solomon",
-  "module": "dist/ts-wags.esm.js",
+  "module": "dist/wags-js.esm.js",
   "size-limit": [
     {
-      "path": "dist/ts-wags.cjs.production.min.js",
+      "path": "dist/wags-js.cjs.production.min.js",
       "limit": "10 KB"
     },
     {
-      "path": "dist/ts-wags.esm.js",
+      "path": "dist/wags-js.esm.js",
       "limit": "10 KB"
     }
   ],
