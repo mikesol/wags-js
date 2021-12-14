@@ -1,10 +1,15 @@
+// ps
+export type PSCycle = void & { _: 'PSCycle' };
+export type PSCycleEnv = void & { _: 'PSCycleEnv' };
+
+// ts
 export interface NonEmptyArray<A> extends Array<A> {
   0: A;
 }
 
-type CycleEnv = { weight: number; tag?: string };
+export type CycleEnv = { weight: number; tag?: string };
 
-type Cycle<T> =
+export type Cycle<T> =
   | {
       branching: { nel: NonEmptyArray<Cycle<T>>; env: CycleEnv };
     }

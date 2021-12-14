@@ -1,7 +1,7 @@
-module Util
-  ( tsCycleEnvToCycleEnv
-  , tsCycleToPSCycle_
+module PSBindings
+  ( tsCycleEnvToPSCycleEnv
   , tsCycleToPSCycle
+  , psCycleEnvToTSCycleEnv
   , psCycleToTSCycle
   ) where
 
@@ -15,19 +15,18 @@ import Data.List.Types (NonEmptyList(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty ((:|))
-import Data.Variant (inj)
-import Data.Variant (match)
+import Data.Variant (inj, match)
 import Type.Proxy (Proxy(..))
 import Types (TSCycle, TSCycleEnv)
 import WAGS.Graph.Parameter (Maybe', _just, _nothing)
 import WAGS.Lib.Tidal.Cycle (Cycle(..), CycleEnv)
 
-foreign import tsCycleEnvToCycleEnv_ :: (String -> Maybe String) -> Maybe String -> TSCycleEnv -> CycleEnv
+foreign import tsCycleEnvToPSCycleEnv_ :: (String -> Maybe String) -> Maybe String -> TSCycleEnv -> CycleEnv
 
-foreign import cycleEnvToTSCycleEnv :: Number -> Maybe' String -> TSCycleEnv
+foreign import psCycleEnvToTSCycleEnv :: Number -> Maybe' String -> TSCycleEnv
 
-tsCycleEnvToCycleEnv :: TSCycleEnv -> CycleEnv
-tsCycleEnvToCycleEnv = tsCycleEnvToCycleEnv_ Just Nothing
+tsCycleEnvToPSCycleEnv :: TSCycleEnv -> CycleEnv
+tsCycleEnvToPSCycleEnv = tsCycleEnvToPSCycleEnv_ Just Nothing
 
 tsCycleToPSCycle :: TSCycle ~> Cycle
 tsCycleToPSCycle = tsCycleToPSCycle_ identity
@@ -41,7 +40,7 @@ tsCycleToPSCycle_ f = go <<< unwrap
     , internal: \{ nel, env } -> Internal $ step nel env
     , singleNote: \{ val, env } -> SingleNote
         { val: f val
-        , env: tsCycleEnvToCycleEnv env
+        , env: tsCycleEnvToPSCycleEnv env
         }
     }
 
@@ -54,7 +53,7 @@ tsCycleToPSCycle_ f = go <<< unwrap
 
   step arr env =
     { nel: map (go <<< unwrap) (nea2nel arr)
-    , env: tsCycleEnvToCycleEnv env
+    , env: tsCycleEnvToPSCycleEnv env
     }
 
 psCycleToTSCycle :: Cycle ~> TSCycle
@@ -68,7 +67,7 @@ psCycleToTSCycle_ f = go
   go (Internal { nel, env }) = wrap $ inj (Proxy :: _ "internal") $ step nel env
   go (SingleNote { val, env }) = wrap $ inj (Proxy :: _ "singleNote")
     { val: f val
-    , env: cycleEnvToTSCycleEnv env.weight
+    , env: psCycleEnvToTSCycleEnv env.weight
         (maybe _nothing _just env.tag)
     }
 
@@ -81,6 +80,6 @@ psCycleToTSCycle_ f = go
 
   step arr env =
     { nel: map go (nel2nea arr)
-    , env: cycleEnvToTSCycleEnv env.weight
+    , env: psCycleEnvToTSCycleEnv env.weight
         (maybe _nothing _just env.tag)
     }
