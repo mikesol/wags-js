@@ -5,6 +5,9 @@ import Data.Newtype (class Newtype)
 import Data.Variant (Variant)
 
 data TSCycleEnv
+data TSMaybe :: forall k. k -> Type
+data TSMaybe a
+
 derive instance Newtype (TSCycle a) _
 newtype TSCycle a = TSCycle
   ( Variant

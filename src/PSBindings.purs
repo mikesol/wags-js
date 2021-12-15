@@ -3,6 +3,8 @@ module PSBindings
   , tsCycleToPSCycle
   , psCycleEnvToTSCycleEnv
   , psCycleToTSCycle
+  , tsMaybeToPSMaybe
+  , psMaybeToTSMaybe
   ) where
 
 import Prelude
@@ -17,9 +19,19 @@ import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Variant (inj, match)
 import Type.Proxy (Proxy(..))
-import Types (TSCycle, TSCycleEnv)
+import Types (TSCycle, TSCycleEnv, TSMaybe)
 import WAGS.Graph.Parameter (Maybe', _just, _nothing)
 import WAGS.Lib.Tidal.Cycle (Cycle(..), CycleEnv)
+
+foreign import tsMaybeToPSMaybe_ :: forall a. (a -> Maybe a) -> Maybe a -> TSMaybe a -> Maybe a
+
+foreign import psMaybeToTSMaybe_ :: Maybe' ~> TSMaybe
+
+psMaybeToTSMaybe :: Maybe ~> TSMaybe
+psMaybeToTSMaybe = maybe _nothing _just >>> psMaybeToTSMaybe_
+
+tsMaybeToPSMaybe :: TSMaybe ~> Maybe
+tsMaybeToPSMaybe = tsMaybeToPSMaybe_ Just Nothing
 
 foreign import tsCycleEnvToPSCycleEnv_ :: (String -> Maybe String) -> Maybe String -> TSCycleEnv -> CycleEnv
 

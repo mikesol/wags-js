@@ -12,8 +12,9 @@
   },
   "scripts": {
     "start": "tsdx watch",
-    "build": "cross-env spago install && spago bundle-module --main PSBindings --to src/ps.js && tsdx build",
-    "test": "tsdx test",
+    "build:ps": "cross-env spago install && spago bundle-module --main PSBindings --to src/ps.js",
+    "build": "cross-env npm run build:ps && tsdx build",
+    "test": "cross-env npm run build:ps && tsdx test",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
     "size": "size-limit",
