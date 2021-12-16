@@ -3,6 +3,8 @@ import {
   psCycleEnvToTSCycleEnv,
   tsCycleToPSCycle,
   psCycleToTSCycle,
+  tsNoteToPSNote,
+  psNoteToTSNote,
 } from './ps';
 import { Cycle, Maybe, NonEmptyArray, Note, TimeIs } from './types';
 
@@ -49,6 +51,8 @@ export {
   psCycleEnvToTSCycleEnv,
   tsCycleToPSCycle,
   psCycleToTSCycle,
+  tsNoteToPSNote,
+  psNoteToTSNote,
   s2c,
   i,
   b,

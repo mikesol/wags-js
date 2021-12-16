@@ -1,97 +1,196 @@
-module PSBindings
-  ( tsCycleEnvToPSCycleEnv
-  , tsCycleToPSCycle
-  , psCycleEnvToTSCycleEnv
-  , psCycleToTSCycle
-  , tsMaybeToPSMaybe
-  , psMaybeToTSMaybe
-  ) where
+module PSBindings where
 
 import Prelude
 
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Profunctor (lcmap)
+import Data.Variant.Maybe (Maybe)
+import Foreign.Object (Object)
 import Data.Array as A
-import Data.Array.NonEmpty (fromNonEmpty, toNonEmpty)
-import Data.Array.NonEmpty.Internal (NonEmptyArray)
-import Data.List as L
-import Data.List.Types (NonEmptyList(..))
-import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap, wrap)
-import Data.NonEmpty ((:|))
-import Data.Variant (inj, match)
-import Type.Proxy (Proxy(..))
-import Types (TSCycle, TSCycleEnv, TSMaybe)
-import WAGS.Graph.Parameter (Maybe', _just, _nothing)
-import WAGS.Lib.Tidal.Cycle (Cycle(..), CycleEnv)
+import WAGS.Lib.Tidal.Cycle as C
+import WAGS.Lib.Tidal.Tidal as T
+import WAGS.Lib.Tidal.Types as TT
 
-foreign import tsMaybeToPSMaybe_ :: forall a. (a -> Maybe a) -> Maybe a -> TSMaybe a -> Maybe a
+b :: forall event. C.Cycle (Maybe (TT.Note event)) -> Array (C.Cycle (Maybe (TT.Note event))) -> C.Cycle (Maybe (TT.Note event))
+b = T.b
 
-foreign import psMaybeToTSMaybe_ :: Maybe' ~> TSMaybe
+_b :: forall event. C.Cycle (Maybe (TT.Note event)) -> C.Cycle (Maybe (TT.Note event))
+_b = T.b'
 
-psMaybeToTSMaybe :: Maybe ~> TSMaybe
-psMaybeToTSMaybe = maybe _nothing _just >>> psMaybeToTSMaybe_
+b_ :: C.Cycle (Maybe (TT.Note Unit)) -> Array (C.Cycle (Maybe (TT.Note Unit))) -> C.Cycle (Maybe (TT.Note Unit))
+b_ = T.b_
 
-tsMaybeToPSMaybe :: TSMaybe ~> Maybe
-tsMaybeToPSMaybe = tsMaybeToPSMaybe_ Just Nothing
+x :: forall event. C.Cycle (Maybe (TT.Note event)) -> Array (C.Cycle (Maybe (TT.Note event))) -> C.Cycle (Maybe (TT.Note event))
+x = T.x
 
-foreign import tsCycleEnvToPSCycleEnv_ :: (String -> Maybe String) -> Maybe String -> TSCycleEnv -> CycleEnv
+_x :: forall event. C.Cycle (Maybe (TT.Note event)) -> C.Cycle (Maybe (TT.Note event))
+_x = T.x'
 
-foreign import psCycleEnvToTSCycleEnv :: Number -> Maybe' String -> TSCycleEnv
+x_ :: C.Cycle (Maybe (TT.Note Unit)) -> Array (C.Cycle (Maybe (TT.Note Unit))) -> C.Cycle (Maybe (TT.Note Unit))
+x_ = T.x_
 
-tsCycleEnvToPSCycleEnv :: TSCycleEnv -> CycleEnv
-tsCycleEnvToPSCycleEnv = tsCycleEnvToPSCycleEnv_ Just Nothing
+i :: forall event. C.Cycle (Maybe (TT.Note event)) -> Array (C.Cycle (Maybe (TT.Note event))) -> C.Cycle (Maybe (TT.Note event))
+i = T.i
 
-tsCycleToPSCycle :: TSCycle ~> Cycle
-tsCycleToPSCycle = tsCycleToPSCycle_ identity
+_i :: forall event. C.Cycle (Maybe (TT.Note event)) -> C.Cycle (Maybe (TT.Note event))
+_i = T.i'
 
-tsCycleToPSCycle_ :: forall a b. (a -> b) -> TSCycle a -> Cycle b
-tsCycleToPSCycle_ f = go <<< unwrap
-  where
-  go = match
-    { branching: \{ nel, env } -> Branching $ step nel env
-    , simultaneous: \{ nel, env } -> Simultaneous $ step nel env
-    , internal: \{ nel, env } -> Internal $ step nel env
-    , singleNote: \{ val, env } -> SingleNote
-        { val: f val
-        , env: tsCycleEnvToPSCycleEnv env
-        }
-    }
+i_ :: C.Cycle (Maybe (TT.Note Unit)) -> Array (C.Cycle (Maybe (TT.Note Unit))) -> C.Cycle (Maybe (TT.Note Unit))
+i_ = T.i_
 
-  nea2nel :: NonEmptyArray ~> NonEmptyList
-  nea2nel arr =
-    let
-      a :| b = toNonEmpty arr
-    in
-      NonEmptyList (a :| L.fromFoldable b)
+betwixt :: Number -> Number -> Number -> Number
+betwixt = T.betwixt
 
-  step arr env =
-    { nel: map (go <<< unwrap) (nea2nel arr)
-    , env: tsCycleEnvToPSCycleEnv env
-    }
+c2s :: forall event. C.Cycle (Maybe (TT.Note event)) -> TT.CycleDuration -> NonEmptyArray (NonEmptyArray (TT.NoteInTime (Maybe (TT.Note event))))
+c2s = T.c2s
 
-psCycleToTSCycle :: Cycle ~> TSCycle
-psCycleToTSCycle = psCycleToTSCycle_ identity
+{-
+-- uses ClockTime
+derivative = T.derivative
 
-psCycleToTSCycle_ :: forall a b. (a -> b) -> Cycle a -> TSCycle b
-psCycleToTSCycle_ f = go
-  where
-  go (Branching { nel, env }) = wrap $ inj (Proxy :: _ "branching") $ step nel env
-  go (Simultaneous { nel, env }) = wrap $ inj (Proxy :: _ "simultaneous") $ step nel env
-  go (Internal { nel, env }) = wrap $ inj (Proxy :: _ "internal") $ step nel env
-  go (SingleNote { val, env }) = wrap $ inj (Proxy :: _ "singleNote")
-    { val: f val
-    , env: psCycleEnvToTSCycleEnv env.weight
-        (maybe _nothing _just env.tag)
-    }
+-- uses choice
+focus = T.focus
+-}
+impatient :: forall a. TT.NextCycle a -> TT.NextCycle a
+impatient = T.impatient
 
-  nel2nea :: NonEmptyList ~> NonEmptyArray
-  nel2nea arr =
-    let
-      a :| b = unwrap arr
-    in
-      fromNonEmpty (a :| A.fromFoldable b)
+drone :: forall event. String -> Maybe (TT.DroneNote event)
+drone = T.drone
 
-  step arr env =
-    { nel: map go (nel2nea arr)
-    , env: psCycleEnvToTSCycleEnv env.weight
-        (maybe _nothing _just env.tag)
-    }
+changeBufferOffset
+  :: forall event
+   . (TT.TimeIs' event -> Number)
+  -> Maybe (TT.Note event)
+  -> Maybe (TT.Note event)
+changeBufferOffset = T.changeBufferOffset
+
+changeForward :: forall event. Boolean -> Maybe (TT.Note event) -> Maybe (TT.Note event)
+changeForward = T.changeForward
+
+changeRate
+  :: forall  event
+   . ( TT.TimeIs' event
+       -> Number
+     )
+  -> Maybe (TT.Note event)
+  -> Maybe (TT.Note event)
+
+changeRate = T.changeRate
+
+changeSample :: forall event. TT.Sample -> Maybe (TT.Note event) -> Maybe (TT.Note event)
+changeSample = T.changeSample
+
+changeVolume
+  :: forall event
+   . (TT.TimeIs' event -> Number)
+  -> Maybe (TT.Note event)
+  -> Maybe (TT.Note event)
+
+changeVolume = T.changeVolume
+
+onTag :: forall a. String -> (a -> a) -> C.Cycle a -> C.Cycle a
+onTag = T.onTag
+
+_onTag :: forall a. String -> (a -> a) -> C.Cycle a -> C.Cycle a
+_onTag = T.onTag'
+
+onTagWithIndex :: forall a. String -> (Int -> a -> a) -> C.Cycle a -> C.Cycle a
+onTagWithIndex = T.onTagWithIndex
+
+_onTagWithIndex :: forall a. String -> (Int -> a -> a) -> C.Cycle a -> C.Cycle a
+_onTagWithIndex = T.onTagWithIndex'
+
+onTags :: forall a. (Array String -> Boolean) -> (a -> a) -> C.Cycle a -> C.Cycle a
+onTags = T.onTags <<< lcmap A.fromFoldable
+
+_onTags :: forall a. (Array String -> Boolean) -> (a -> a) -> C.Cycle a -> C.Cycle a
+_onTags = T.onTags <<< lcmap A.fromFoldable
+
+onTagsC :: forall a. (Array String -> Boolean) -> (C.Cycle a -> C.Cycle a) -> C.Cycle a -> C.Cycle a
+onTagsC = T.onTagsC <<< lcmap A.fromFoldable
+
+_onTagsC :: forall a. (Array String -> Boolean) -> (C.Cycle a -> C.Cycle a) -> C.Cycle a -> C.Cycle a
+_onTagsC = T.onTagsC' <<< lcmap A.fromFoldable
+
+onTagsCWithIndex :: forall a. (Array String -> Boolean) -> (Int -> C.Cycle a -> C.Cycle a) -> C.Cycle a -> C.Cycle a
+onTagsCWithIndex = T.onTagsCWithIndex <<< lcmap A.fromFoldable
+
+_onTagsCWithIndex :: forall a. (Array String -> Boolean) -> (Int -> C.Cycle a -> C.Cycle a) -> C.Cycle a -> C.Cycle a
+_onTagsCWithIndex = T.onTagsCWithIndex' <<< lcmap A.fromFoldable
+
+onTagsWithIndex :: forall a. (Array String -> Boolean) -> (Int -> a -> a) -> C.Cycle a -> C.Cycle a
+onTagsWithIndex = T.onTagsWithIndex <<< lcmap A.fromFoldable
+
+_onTagsWithIndex :: forall a. (Array String -> Boolean) -> (Int -> a -> a) -> C.Cycle a -> C.Cycle a
+_onTagsWithIndex = T.onTagsWithIndex' <<< lcmap A.fromFoldable
+
+parse :: forall event. String -> C.Cycle (Maybe (TT.Note event))
+parse = T.parse
+
+parse_ :: String -> C.Cycle (Maybe (TT.Note Unit))
+parse_ = T.parse_
+
+plainly :: forall a. TT.NextCycle a -> TT.Voice a
+plainly = T.plainly
+
+rend :: forall event. C.Cycle (Maybe (TT.Note event)) -> TT.CycleDuration -> TT.NextCycle event
+rend = T.rend
+
+rendNit :: forall event. NonEmptyArray (NonEmptyArray (TT.NoteInTime (Maybe (TT.Note event)))) -> TT.NextCycle event
+rendNit = T.rendNit
+
+rend_ :: C.Cycle (Maybe (TT.Note Unit)) -> TT.CycleDuration -> TT.NextCycle Unit
+rend_ = T.rend_
+
+s2f :: forall event. NonEmptyArray (NonEmptyArray (TT.NoteInTime (Maybe (TT.Note event)))) -> NonEmptyArray (TT.NoteInFlattenedTime (TT.Note event))
+s2f = T.s2f
+
+u :: C.Cycle (Maybe (TT.Note Unit)) -> C.Cycle (Maybe (TT.Note Unit))
+u = T.u
+
+unrest :: forall event. NonEmptyArray (NonEmptyArray (TT.NoteInTime (Maybe (TT.Note event)))) -> Array (Array (TT.NoteInTime (TT.Note event)))
+unrest = T.unrest
+
+sString :: forall event. String -> TT.CycleDuration -> TT.Voice event
+sString = T.s
+
+sCycle :: forall event. (C.Cycle (Maybe (TT.Note event))) -> TT.CycleDuration -> TT.Voice event
+sCycle = T.s
+
+sNoteGroups :: forall event. (NonEmptyArray (NonEmptyArray (TT.NoteInTime (Maybe (TT.Note event))))) -> TT.CycleDuration -> TT.Voice event
+sNoteGroups = T.s
+
+sFNoteGroups :: forall event. (TT.CycleDuration -> NonEmptyArray (NonEmptyArray (TT.NoteInTime (Maybe (TT.Note event))))) -> TT.CycleDuration -> TT.Voice event
+sFNoteGroups = T.s
+
+sNoteList :: forall event. (NonEmptyArray (TT.NoteInFlattenedTime (TT.Note event))) -> TT.CycleDuration -> TT.Voice event
+sNoteList = T.s
+
+sFNoteList :: forall event. (TT.CycleDuration -> NonEmptyArray (TT.NoteInFlattenedTime (TT.Note event))) -> TT.CycleDuration -> TT.Voice event
+sFNoteList = T.s
+
+sNextCycle :: forall event. TT.NextCycle event -> TT.CycleDuration -> TT.Voice event
+sNextCycle = T.s
+
+sFNextCycle :: forall event. (TT.CycleDuration -> TT.NextCycle event) -> TT.CycleDuration -> TT.Voice event
+sFNextCycle = T.s
+
+sVoice :: forall event. TT.Voice event -> TT.CycleDuration -> TT.Voice event
+sVoice = T.s
+
+sFVoice :: forall event. (TT.CycleDuration -> TT.Voice event) -> TT.CycleDuration -> TT.Voice event
+sFVoice = T.s
+
+make
+  :: forall event
+   . Number
+  -> { | TT.EWF' (TT.CycleDuration -> TT.Voice event)
+         ( TT.AH' (Maybe (TT.DroneNote event))
+             ( title :: String
+             , sounds :: Object TT.BufferUrl
+             , preload :: Array TT.Sample
+             )
+         )
+     }
+  -> TT.TheFuture event
+make = T.make

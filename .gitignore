@@ -16,4 +16,4 @@ dist
 /.vscode
 .purs-repl
 /.vscode/settings.json
-/src/ps.js
+/src/ps_.js

@@ -32,6 +32,19 @@ let additions =
         , version = "v2.0.0"
         , dependencies = [ "string-parsers" ]
         }
+      , everythings-better-with-variants =
+        { dependencies =
+          [ "control"
+          , "foldable-traversable"
+          , "invariant"
+          , "newtype"
+          , "prelude"
+          , "psci-support"
+          , "variant"
+          ]
+        , repo = "https://github.com/mikesol/purescript-everythings-better-with-variants.git"
+        , version = "v0.0.0"
+        }
       , svg-parser-halogen =
         { repo = "https://github.com/rnons/purescript-svg-parser-halogen.git"
         , version = "v2.0.0"
@@ -92,7 +105,7 @@ let additions =
           , "typelevel-prelude"
           ]
         , repo = "https://github.com/mikesol/purescript-wags.git"
-        , version = "v0.6.2"
+        , version = "v0.6.3"
         }
       , free =
         { dependencies =
@@ -125,7 +138,7 @@ let additions =
           , "strings"
           ]
         , repo = "https://github.com/mikesol/purescript-wags-lib.git"
-        , version = "v0.0.66"
+        , version = "v0.0.69"
         }
       , painting =
         { dependencies =
